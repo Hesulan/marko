@@ -74,19 +74,30 @@ module.exports = {
     then: function(fn, fnErr) {
         var self = this;
         var promise = new Promise(function(resolve, reject) {
-            self.on('error', reject);
+            self.on('error', function(error) {
+                if (typeof fnErr === 'function') {
+                    try {
+                        resolve(fnErr(error));
+                    } catch (err) {
+                        reject(err);
+                    }
+                } else {
+                    reject(error);
+                }
+            });
             self.on('finish', function(data) {
-                try {
-                    resolve(fn(data));
-                } catch(err) {
-                    reject(err);
+                if (typeof fn === 'function') {
+                    try {
+                        resolve(fn(data));
+                    } catch (err) {
+                        reject(err);
+                    }
+                } else {
+                    resolve(data);
                 }
             });
         });
-
-        if (fnErr) {
-            promise = promise.catch(fnErr);
-        }
+        
         return promise;
     },
 
